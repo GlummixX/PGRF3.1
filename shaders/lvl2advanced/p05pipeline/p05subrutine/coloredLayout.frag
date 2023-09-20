@@ -16,7 +16,7 @@ subroutine (colorFunction ) vec4 colorByPossition() {
 }
 
 #extension GL_ARB_explicit_uniform_location : enable
-// set option 3 - define number ID of subroutine, see app code 
+// set option 3 - define number ID of subroutine, see shape.app code
 layout(index = 4) subroutine (colorFunction ) vec4 greyByPossition() {
     return vec4(gl_FragCoord.xxx/100., 1.0);
 }
