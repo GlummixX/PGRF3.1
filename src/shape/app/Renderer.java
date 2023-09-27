@@ -7,6 +7,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import shape.global.AbstractRenderer;
+import shape.model.Grid;
 import shape.utils.FpsLimiter;
 import transforms.Camera;
 import transforms.Mat4;
@@ -21,6 +22,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 import static shape.model.Grid.gridList;
+import static shape.model.Grid.gridStrip;
 
 enum Mode{
     Fill,
@@ -35,7 +37,7 @@ enum Mode{
 
 public class Renderer extends AbstractRenderer {
     private FpsLimiter limiter;
-    private OGLBuffers grid;
+    private Grid grid;
     private boolean mouseButton1 = false;
     private Mode mode = Mode.Fill;
     double ox, oy;
@@ -121,9 +123,9 @@ public class Renderer extends AbstractRenderer {
         limiter = new FpsLimiter(60);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        shaderProgram = ShaderUtils.loadProgram("/grid/simple");
+        shaderProgram = ShaderUtils.loadProgram("/grid/torus");
         glUseProgram(this.shaderProgram);
-        grid = gridList(100);
+        grid = gridStrip(100);
         glEnable(GL_DEPTH_TEST);
     }
 
@@ -144,15 +146,15 @@ public class Renderer extends AbstractRenderer {
             case Fill -> {
                 glPolygonMode(GL_FRONT, GL_FILL);
                 glPolygonMode(GL_BACK, GL_FILL);
-                grid.draw(GL_TRIANGLES, shaderProgram);
+                grid.draw(shaderProgram);
             }
             case Lines -> {
                 glPolygonMode(GL_FRONT, GL_LINE);
                 glPolygonMode(GL_BACK, GL_LINE);
-                grid.draw(GL_TRIANGLES, shaderProgram);
+                grid.draw(shaderProgram);
             }
             case Dots -> {
-                grid.draw(GL_POINTS, shaderProgram);
+                grid.draw(shaderProgram, GL_POINTS);
             }
         }
 
