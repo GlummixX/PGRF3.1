@@ -4,9 +4,8 @@ import lwjglutils.OGLBuffers;
 
 public class Grid {
 
-    public static OGLBuffers gridList(int gridSize, int boxSize) {
-        int boxesPerSide = gridSize / boxSize;
-
+    public static OGLBuffers gridList(int boxesPerSide) {
+        float boxSize = 1F / boxesPerSide;
         float[] vertex = new float[boxesPerSide * boxesPerSide * 3];
         for (int y = 0; y < boxesPerSide; y++) {
             for (int x = 0; x < boxesPerSide; x++) {

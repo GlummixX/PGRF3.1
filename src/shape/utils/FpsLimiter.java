@@ -18,10 +18,11 @@ public class FpsLimiter {
     public void limit() {
         realDelta = System.currentTimeMillis() - realRef;
         realRef = System.currentTimeMillis();
+        buffer.add(1000F / realDelta);
         long wait = loopTimeReq - realDelta;
         if (wait > 0) {
             try {
-                Thread.sleep(Math.round(wait));
+                Thread.sleep(wait);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
@@ -46,7 +47,6 @@ public class FpsLimiter {
     }
 
     public int getCurrentFps() {
-        buffer.add(1000F / realDelta);
         return (int) Math.round(buffer.getAverage());
     }
 }

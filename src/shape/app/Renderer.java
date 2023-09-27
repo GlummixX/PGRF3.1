@@ -11,8 +11,10 @@ import shape.utils.FpsLimiter;
 import transforms.Camera;
 import transforms.Mat4;
 import transforms.Mat4PerspRH;
+import transforms.Vec3D;
 
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -20,12 +22,24 @@ import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 import static shape.model.Grid.gridList;
 
+enum Mode{
+    Fill,
+    Lines,
+    Dots;
+    public Mode next(){
+        Mode[] array = Mode.values();
+        int i = Arrays.asList(array).indexOf(this);
+        return array[(i+1)%3];
+    }
+}
+
 public class Renderer extends AbstractRenderer {
     private FpsLimiter limiter;
     private OGLBuffers grid;
     private boolean mouseButton1 = false;
+    private Mode mode = Mode.Fill;
     double ox, oy;
-    Camera cam = new Camera();
+    Camera cam = new Camera().withPosition(new Vec3D(-1.0,-1.0,1.0));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, 1, 0.01, 1000.0);
     int shaderProgram, locMat;
 
@@ -42,12 +56,13 @@ public class Renderer extends AbstractRenderer {
                      glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
                  if (action == GLFW_PRESS || action == GLFW_REPEAT) {
                      switch (key) {
-                         case GLFW_KEY_W -> cam = cam.forward(1);
-                         case GLFW_KEY_D -> cam = cam.right(1);
-                         case GLFW_KEY_S -> cam = cam.backward(1);
-                         case GLFW_KEY_A -> cam = cam.left(1);
-                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(1);
-                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(1);
+                         case GLFW_KEY_M -> mode = mode.next();
+                         case GLFW_KEY_W -> cam = cam.forward(0.01);
+                         case GLFW_KEY_D -> cam = cam.right(0.01);
+                         case GLFW_KEY_S -> cam = cam.backward(0.01);
+                         case GLFW_KEY_A -> cam = cam.left(0.01);
+                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(0.01);
+                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(0.01);
                          case GLFW_KEY_SPACE -> cam = cam.withFirstPerson(!cam.getFirstPerson());
                          case GLFW_KEY_R -> cam = cam.mulRadius(0.9f);
                          case GLFW_KEY_F -> cam = cam.mulRadius(1.1f);
@@ -103,14 +118,13 @@ public class Renderer extends AbstractRenderer {
     public void init() {
         super.init();
         GL.createCapabilities();
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
         limiter = new FpsLimiter(60);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         shaderProgram = ShaderUtils.loadProgram("/grid/simple");
         glUseProgram(this.shaderProgram);
-        grid = gridList(10,1);
+        grid = gridList(100);
+        glEnable(GL_DEPTH_TEST);
     }
 
     @Override
@@ -126,8 +140,21 @@ public class Renderer extends AbstractRenderer {
                 ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
 
         // bind and draw
-        glPolygonMode(GL_FRONT, GL_FILL);
-        grid.draw(GL_TRIANGLES, shaderProgram);
+        switch (mode){
+            case Fill -> {
+                glPolygonMode(GL_FRONT, GL_FILL);
+                glPolygonMode(GL_BACK, GL_FILL);
+                grid.draw(GL_TRIANGLES, shaderProgram);
+            }
+            case Lines -> {
+                glPolygonMode(GL_FRONT, GL_LINE);
+                glPolygonMode(GL_BACK, GL_LINE);
+                grid.draw(GL_TRIANGLES, shaderProgram);
+            }
+            case Dots -> {
+                grid.draw(GL_POINTS, shaderProgram);
+            }
+        }
 
         textRenderer.addStr2D(width-120, height-3, " (c) Matěj Kolář UHK");
         textRenderer.addStr2D(width-50, 15, "FPS: " + limiter.getCurrentFps());
