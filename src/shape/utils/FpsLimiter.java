@@ -1,7 +1,5 @@
 package shape.utils;
 
-import shape.utils.AveragingCircularBuffer;
-
 public class FpsLimiter {
     private long start;
     private int loopTimeReq;
@@ -26,7 +24,7 @@ public class FpsLimiter {
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
-        }else{
+        } else {
             try {
                 Thread.sleep(5);
             } catch (InterruptedException ex) {

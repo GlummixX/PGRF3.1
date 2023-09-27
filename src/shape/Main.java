@@ -1,7 +1,7 @@
 package shape;
 
-import shape.global.LwjglWindow;
 import shape.app.Renderer;
+import shape.global.LwjglWindow;
 
 public class Main {
     public static void main(String[] args) {
