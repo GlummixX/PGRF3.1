@@ -180,7 +180,7 @@ public class Renderer extends AbstractRenderer {
         limiter = new FpsLimiter(60);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        shaderProgram = ShaderUtils.loadProgram("/grid/torus");
+        shaderProgram = ShaderUtils.loadProgram("/grid/flat");
         glUseProgram(this.shaderProgram);
         gridList = gridList(100);
         gridStrip = gridStrip(100);

@@ -1,4 +1,4 @@
-#version 150
+#version 330
 #define PI 3.1415926535897932384626433832795
 #define a 1.0
 #define b 0.5
