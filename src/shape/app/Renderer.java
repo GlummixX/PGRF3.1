@@ -21,8 +21,7 @@ import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
-import static org.lwjgl.opengl.GL20.glUseProgram;
+import static org.lwjgl.opengl.GL20.*;
 import static shape.model.Grid.gridList;
 import static shape.model.Grid.gridStrip;
 
@@ -42,7 +41,8 @@ public class Renderer extends AbstractRenderer {
     double ox, oy;
     Camera cam = new Camera().withPosition(new Vec3D(-1.0, -1.0, 1.0));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    int shaderProgram, locMat;
+    int shaderProgram, locMat, locTime;
+    private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
     private Grid gridList;
     private Grid gridStrip;
@@ -54,15 +54,19 @@ public class Renderer extends AbstractRenderer {
     private double zoom = 32;
     private boolean mouseButton1 = false;
     private Mode mode = Mode.Fill;
+    private String aciveShaderName = "Flat";
+    private float time = 0;
 
     public Renderer(int width, int height) {
         super(width, height);
         callbacks();
+        gridShaders = new HashMap<>();
 
         info = new HashMap<>();
         info.put("mode", new ArrayList<>(List.of("Mode:", "")));
         info.put("grid", new ArrayList<>(List.of("Grid:", "")));
         info.put("projection", new ArrayList<>(List.of("Projection:", "")));
+        info.put("shader", new ArrayList<>(List.of("Grid shader:", "Flat")));
         info.put("speed", new ArrayList<>(List.of("Speed:", "0.01", " Zoom:", "32")));
 
         info.get("mode").set(1, mode.toString());
@@ -102,6 +106,12 @@ public class Renderer extends AbstractRenderer {
                             }
                             info.get("projection").set(1, persp ? "Persp" : "Ortho");
                         }
+                        case GLFW_KEY_R -> {
+                            List<String> l = new ArrayList<>(gridShaders.keySet());
+                            aciveShaderName = l.get(((l.indexOf(aciveShaderName) + 1) % l.size()));
+                            shaderProgram = gridShaders.get(aciveShaderName);
+                            info.get("shader").set(1, aciveShaderName);
+                        }
                         case GLFW_KEY_W -> cam = cam.forward(speed);
                         case GLFW_KEY_D -> cam = cam.right(speed);
                         case GLFW_KEY_S -> cam = cam.backward(speed);
@@ -109,8 +119,8 @@ public class Renderer extends AbstractRenderer {
                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(speed);
                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(speed);
                         case GLFW_KEY_SPACE -> cam = cam.withFirstPerson(!cam.getFirstPerson());
-                        case GLFW_KEY_R -> cam = cam.mulRadius(0.9f);
-                        case GLFW_KEY_F -> cam = cam.mulRadius(1.1f);
+                        case GLFW_KEY_KP_ADD -> cam = cam.mulRadius(0.9f);
+                        case GLFW_KEY_KP_SUBTRACT -> cam = cam.mulRadius(1.1f);
                     }
                 }
             }
@@ -180,8 +190,12 @@ public class Renderer extends AbstractRenderer {
         limiter = new FpsLimiter(60);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        shaderProgram = ShaderUtils.loadProgram("/grid/flat");
-        glUseProgram(this.shaderProgram);
+        gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
+        gridShaders.put("Torus", ShaderUtils.loadProgram("/grid/torus"));
+        gridShaders.put("Sphere", ShaderUtils.loadProgram("/grid/sphere"));
+        gridShaders.put("Sea", ShaderUtils.loadProgram("/grid/sea"));
+        shaderProgram = gridShaders.get("Flat");
+
         gridList = gridList(100);
         gridStrip = gridStrip(100);
         grid = gridList;
@@ -199,6 +213,11 @@ public class Renderer extends AbstractRenderer {
         glUniformMatrix4fv(locMat, false,
                 ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
 
+        if (aciveShaderName.equals("Sea")) {
+            time = (time + 0.01F) % (float) Math.PI;
+            glUniform1f(1, time);
+        }
+
         switch (mode) {
             case Fill -> {
                 glPolygonMode(GL_FRONT, GL_FILL);
@@ -210,9 +229,7 @@ public class Renderer extends AbstractRenderer {
                 glPolygonMode(GL_BACK, GL_LINE);
                 grid.draw(shaderProgram);
             }
-            case Dots -> {
-                grid.draw(shaderProgram, GL_POINTS);
-            }
+            case Dots -> grid.draw(shaderProgram, GL_POINTS);
         }
 
         text();

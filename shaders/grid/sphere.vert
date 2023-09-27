@@ -1,7 +1,7 @@
 #version 330
 #define PI 3.1415926535897932384626433832795
 #define scale 1.0
-in vec2 inPosition; // input from the vertex buffer
+in vec3 inPosition; // input from the vertex buffer
 out vec3 normal;
 uniform mat4 matMVP; // matrix
 

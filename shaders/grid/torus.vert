@@ -13,6 +13,6 @@ void main() {
     out_arr.x = cos(x)*(a + b*cos(y));
     out_arr.y = sin(x)*(a + b*cos(y));
     out_arr.z = b*sin(y);
-    color.xyz = (out_arr+1.0)/2.0;
+    color.xyz = ((out_arr+1.0)/2.0)*((out_arr.z+1.0)/2.0); // color + primitive light
 	gl_Position = mat * vec4(out_arr, 1.0);
 } 
