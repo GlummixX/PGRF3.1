@@ -42,6 +42,7 @@ public class Renderer extends AbstractRenderer {
     double ox, oy;
     Camera cam = new Camera().withPosition(new Vec3D(-1.0, -1.0, 1.0));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
+    private boolean renderDocDebug = true;
     int shaderProgram, locMat, objShader;
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
@@ -247,9 +248,11 @@ public class Renderer extends AbstractRenderer {
             model.getBuffers().draw(model.getTopology(), objShader);
         }
 
-        text();
-        textRenderer.addStr2D(width - 120, height - 3, " (c) Matěj Kolář UHK");
-        textRenderer.addStr2D(width - 50, 15, "FPS: " + limiter.getCurrentFps());
+        if (!renderDocDebug) {
+            text();
+            textRenderer.addStr2D(width - 120, height - 3, " (c) Matěj Kolář UHK");
+            textRenderer.addStr2D(width - 50, 15, "FPS: " + limiter.getCurrentFps());
+        }
         limiter.limit();
     }
 

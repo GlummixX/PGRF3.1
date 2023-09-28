@@ -1,7 +1,9 @@
 package shape.model;
 
 import lwjglutils.OGLBuffers;
-import static org.lwjgl.opengl.GL11.*;
+
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP;
 
 public class Grid {
     private OGLBuffers buffers;
@@ -62,7 +64,7 @@ public class Grid {
             }
         }
 
-        int[] index = new int[(boxesPerSide - 1) * (boxesPerSide - 1) * 6];
+        int[] index = new int[2 * boxesPerSide * (boxesPerSide - 1)];
         int r = 0;
         for (int row = 0; row < boxesPerSide - 1; row++) {
             if (row % 2 == 0) {
