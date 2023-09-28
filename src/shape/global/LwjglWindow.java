@@ -87,7 +87,7 @@ public class LwjglWindow {
 		//String text = renderer.getClass().getName();
 		//text = text.substring(0, text.lastIndexOf('.'));
 		// Create the window
-		window = glfwCreateWindow(WIDTH, HEIGHT, "PACMAN PGRFII - Kolář", NULL, NULL);
+		window = glfwCreateWindow(WIDTH, HEIGHT, "PGRF III - Kolář", NULL, NULL);
 		if (window == NULL)
 			throw new RuntimeException("Failed to create the GLFW window");
 		renderer.setWindow(window);

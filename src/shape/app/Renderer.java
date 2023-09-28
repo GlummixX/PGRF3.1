@@ -1,5 +1,6 @@
 package shape.app;
 
+import lwjglutils.OGLModelOBJ;
 import lwjglutils.ShaderUtils;
 import lwjglutils.ToFloatArray;
 import org.lwjgl.BufferUtils;
@@ -41,7 +42,7 @@ public class Renderer extends AbstractRenderer {
     double ox, oy;
     Camera cam = new Camera().withPosition(new Vec3D(-1.0, -1.0, 1.0));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    int shaderProgram, locMat, locTime;
+    int shaderProgram, locMat, objShader;
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
     private Grid gridList;
@@ -56,6 +57,8 @@ public class Renderer extends AbstractRenderer {
     private Mode mode = Mode.Fill;
     private String aciveShaderName = "Flat";
     private float time = 0;
+    private OGLModelOBJ model;
+    private Mat4 modelTransf;
 
     public Renderer(int width, int height) {
         super(width, height);
@@ -194,7 +197,11 @@ public class Renderer extends AbstractRenderer {
         gridShaders.put("Torus", ShaderUtils.loadProgram("/grid/torus"));
         gridShaders.put("Sphere", ShaderUtils.loadProgram("/grid/sphere"));
         gridShaders.put("Sea", ShaderUtils.loadProgram("/grid/sea"));
+        objShader = ShaderUtils.loadProgram("/ducky");
         shaderProgram = gridShaders.get("Flat");
+
+        model = new OGLModelOBJ("/obj/ducky.obj");
+        modelTransf = new Mat4Scale(0.05).mul(new Mat4RotX(1.5)).mul(new Mat4Transl(new Vec3D(0.5, 0.5, 0)));
 
         gridList = gridList(100);
         gridStrip = gridStrip(100);
@@ -209,12 +216,12 @@ public class Renderer extends AbstractRenderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
         glUseProgram(shaderProgram);
+        time = (time + 0.01F) % (float) Math.PI;
 
-        glUniformMatrix4fv(locMat, false,
+        glUniformMatrix4fv(0, false,
                 ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
 
         if (aciveShaderName.equals("Sea")) {
-            time = (time + 0.01F) % (float) Math.PI;
             glUniform1f(1, time);
         }
 
@@ -230,6 +237,14 @@ public class Renderer extends AbstractRenderer {
                 grid.draw(shaderProgram);
             }
             case Dots -> grid.draw(shaderProgram, GL_POINTS);
+        }
+
+        if (aciveShaderName.equals("Sea")) {
+            glUseProgram(objShader);
+            glUniformMatrix4fv(0, false,
+                    ToFloatArray.convert(modelTransf.mul(cam.getViewMatrix().mul(proj))));
+            glUniform1f(1, time);
+            model.getBuffers().draw(model.getTopology(), objShader);
         }
 
         text();

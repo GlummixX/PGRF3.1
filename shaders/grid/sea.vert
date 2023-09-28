@@ -1,6 +1,6 @@
 #version 330
 #define PI 3.1415926535897932384626433832795
-#define wavelength 0.5
+#define wavelength 1.0
 #define amplitude 0.1
 #define waveSpeed 2.0
 
