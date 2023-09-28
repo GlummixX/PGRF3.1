@@ -42,7 +42,7 @@ public class Renderer extends AbstractRenderer {
     double ox, oy;
     Camera cam = new Camera().withPosition(new Vec3D(-1.0, -1.0, 1.0));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    private boolean renderDocDebug = true;
+    private boolean renderDocDebug = false;
     int shaderProgram, locMat, objShader;
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
