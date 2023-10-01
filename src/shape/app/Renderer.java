@@ -34,17 +34,29 @@ enum Mode {
     public Mode next() {
         Mode[] array = Mode.values();
         int i = Arrays.asList(array).indexOf(this);
-        return array[(i + 1) % 3];
+        return array[(i + 1) % array.length];
+    }
+}
+
+enum SceneEnum {
+    Grid,
+    Lights;
+
+    public SceneEnum next() {
+        SceneEnum[] array = SceneEnum.values();
+        int i = Arrays.asList(array).indexOf(this);
+        return array[(i + 1) % array.length];
     }
 }
 
 public class Renderer extends AbstractRenderer {
     double ox, oy;
-    Camera cam = new Camera().withPosition(new Vec3D(-1.0, -1.0, 1.0));
+    Camera cam = new Camera().withPosition(new Vec3D(-0.5, 0.5, 0.5));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    private boolean renderDocDebug = false;
     int shaderProgram, locMat, objShader;
+    private boolean renderDocDebug = false;
     private HashMap<String, Integer> gridShaders;
+    private SceneEnum activeScene = SceneEnum.Grid;
     private FpsLimiter limiter;
     private Grid gridList;
     private Grid gridStrip;
@@ -67,12 +79,14 @@ public class Renderer extends AbstractRenderer {
         gridShaders = new HashMap<>();
 
         info = new HashMap<>();
-        info.put("mode", new ArrayList<>(List.of("Mode:", "")));
-        info.put("grid", new ArrayList<>(List.of("Grid:", "")));
-        info.put("projection", new ArrayList<>(List.of("Projection:", "")));
-        info.put("shader", new ArrayList<>(List.of("Grid shader:", "Flat")));
+        info.put("scene", new ArrayList<>(List.of("[TAB] Scene:", "")));
+        info.put("mode", new ArrayList<>(List.of("[M] Render mode:", "")));
+        info.put("grid", new ArrayList<>(List.of("[G] Grid type:", "")));
+        info.put("projection", new ArrayList<>(List.of("[P] Projection:", "")));
+        info.put("shader", new ArrayList<>(List.of("[R] Grid shader:", "Flat")));
         info.put("speed", new ArrayList<>(List.of("Speed:", "0.01", " Zoom:", "32")));
 
+        info.get("scene").set(1, activeScene.toString());
         info.get("mode").set(1, mode.toString());
         info.get("grid").set(1, list ? "List" : "Strip");
         info.get("projection").set(1, persp ? "Persp" : "Ortho");
@@ -89,6 +103,10 @@ public class Renderer extends AbstractRenderer {
                         case GLFW_KEY_M -> {
                             mode = mode.next();
                             info.get("mode").set(1, mode.toString());
+                        }
+                        case GLFW_KEY_TAB -> {
+                            activeScene = activeScene.next();
+                            info.get("scene").set(1, activeScene.toString());
                         }
                         case GLFW_KEY_G -> {
                             if (list) {
@@ -122,7 +140,6 @@ public class Renderer extends AbstractRenderer {
                         case GLFW_KEY_A -> cam = cam.left(speed);
                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(speed);
                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(speed);
-                        case GLFW_KEY_SPACE -> cam = cam.withFirstPerson(!cam.getFirstPerson());
                         case GLFW_KEY_KP_ADD -> cam = cam.mulRadius(0.9f);
                         case GLFW_KEY_KP_SUBTRACT -> cam = cam.mulRadius(1.1f);
                     }
@@ -137,7 +154,7 @@ public class Renderer extends AbstractRenderer {
                     speed = Math.max(Math.min(speed + dy * 0.02, 1.0), 0.01);
                     info.get("speed").set(1, String.format("%.2f", speed));
                 } else {
-                    zoom += dy;
+                    zoom += zoom * dy * 0.1;
                     info.get("speed").set(3, String.format("%.0f", zoom));
                     proj = new Mat4OrthoRH(width / zoom, height / zoom, 0.01, 1000.0);
                 }
@@ -191,13 +208,14 @@ public class Renderer extends AbstractRenderer {
     public void init() {
         super.init();
         GL.createCapabilities();
-        limiter = new FpsLimiter(60);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        limiter = new FpsLimiter();
+        glClearColor(0.4f, 0.4f, 0.5f, 1.0f);
 
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
         gridShaders.put("Torus", ShaderUtils.loadProgram("/grid/torus"));
         gridShaders.put("Sphere", ShaderUtils.loadProgram("/grid/sphere"));
         gridShaders.put("Sea", ShaderUtils.loadProgram("/grid/sea"));
+        gridShaders.put("Depth", ShaderUtils.loadProgram("/grid/depth"));
         objShader = ShaderUtils.loadProgram("/ducky");
         shaderProgram = gridShaders.get("Flat");
 
@@ -212,40 +230,64 @@ public class Renderer extends AbstractRenderer {
 
     @Override
     public void display() {
+        //shared across scenes
         glViewport(0, 0, width, height);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-
-        glUseProgram(shaderProgram);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         time = (time + 0.01F) % (float) Math.PI;
 
-        glUniformMatrix4fv(0, false,
-                ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
+        switch (activeScene) {
+            case Grid -> {
+                glUseProgram(shaderProgram);
 
-        if (aciveShaderName.equals("Sea")) {
-            glUniform1f(1, time);
-        }
+                glUniformMatrix4fv(0, false,
+                        ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
 
-        switch (mode) {
-            case Fill -> {
-                glPolygonMode(GL_FRONT, GL_FILL);
-                glPolygonMode(GL_BACK, GL_FILL);
-                grid.draw(shaderProgram);
+                if (aciveShaderName.equals("Sea")) {
+                    glUniform1f(1, time);
+                }
+
+                switch (mode) {
+                    case Fill -> {
+                        glPolygonMode(GL_FRONT, GL_FILL);
+                        glPolygonMode(GL_BACK, GL_FILL);
+                        grid.draw(shaderProgram);
+                    }
+                    case Lines -> {
+                        glPolygonMode(GL_FRONT, GL_LINE);
+                        glPolygonMode(GL_BACK, GL_LINE);
+                        grid.draw(shaderProgram);
+                    }
+                    case Dots -> grid.draw(shaderProgram, GL_POINTS);
+                }
+
+                if (aciveShaderName.equals("Sea")) {
+                    glUseProgram(objShader);
+                    glUniformMatrix4fv(0, false,
+                            ToFloatArray.convert(modelTransf.mul(cam.getViewMatrix().mul(proj))));
+                    glUniform1f(1, time);
+                    model.getBuffers().draw(model.getTopology(), objShader);
+                }
             }
-            case Lines -> {
-                glPolygonMode(GL_FRONT, GL_LINE);
-                glPolygonMode(GL_BACK, GL_LINE);
-                grid.draw(shaderProgram);
-            }
-            case Dots -> grid.draw(shaderProgram, GL_POINTS);
-        }
+            case Lights -> {
+                glUseProgram(shaderProgram);
 
-        if (aciveShaderName.equals("Sea")) {
-            glUseProgram(objShader);
-            glUniformMatrix4fv(0, false,
-                    ToFloatArray.convert(modelTransf.mul(cam.getViewMatrix().mul(proj))));
-            glUniform1f(1, time);
-            model.getBuffers().draw(model.getTopology(), objShader);
+                glUniformMatrix4fv(0, false,
+                        ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
+
+                switch (mode) {
+                    case Fill -> {
+                        glPolygonMode(GL_FRONT, GL_FILL);
+                        glPolygonMode(GL_BACK, GL_FILL);
+                        grid.draw(shaderProgram);
+                    }
+                    case Lines -> {
+                        glPolygonMode(GL_FRONT, GL_LINE);
+                        glPolygonMode(GL_BACK, GL_LINE);
+                        grid.draw(shaderProgram);
+                    }
+                    case Dots -> grid.draw(shaderProgram, GL_POINTS);
+                }
+            }
         }
 
         if (!renderDocDebug) {
