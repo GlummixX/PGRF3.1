@@ -23,6 +23,7 @@ public class Grid {
 
     public static Grid gridList(int boxesPerSide) {
         float boxSize = 1F / boxesPerSide;
+        boxesPerSide += 1;
         float[] vertex = new float[boxesPerSide * boxesPerSide * 3];
         for (int y = 0; y < boxesPerSide; y++) {
             for (int x = 0; x < boxesPerSide; x++) {
@@ -33,10 +34,10 @@ public class Grid {
             }
         }
 
-        int[] index = new int[(boxesPerSide - 1) * (boxesPerSide - 1) * 6];
-        for (int x = 0; x < boxesPerSide - 2; x++) {
-            for (int y = 0; y < boxesPerSide - 2; y++) {
-                int i = y * boxesPerSide + x;
+        int[] index = new int[(boxesPerSide-1) * boxesPerSide * 6];
+        for (int x = 0; x < boxesPerSide - 1; x++) {
+            for (int y = 0; y < boxesPerSide - 1; y++) {
+                int i = y * (boxesPerSide) + x;
                 index[i * 6] = i;
                 index[i * 6 + 1] = (i + 1);
                 index[i * 6 + 2] = (i + boxesPerSide + 1);
@@ -54,6 +55,7 @@ public class Grid {
 
     public static Grid gridStrip(int boxesPerSide) {
         float boxSize = 1F / boxesPerSide;
+        boxesPerSide += 1;
         float[] vertex = new float[boxesPerSide * boxesPerSide * 3];
         for (int y = 0; y < boxesPerSide; y++) {
             for (int x = 0; x < boxesPerSide; x++) {

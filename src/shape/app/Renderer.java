@@ -213,9 +213,10 @@ public class Renderer extends AbstractRenderer {
 
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
         gridShaders.put("Torus", ShaderUtils.loadProgram("/grid/torus"));
-        gridShaders.put("Sphere", ShaderUtils.loadProgram("/grid/sphere"));
+        gridShaders.put("Cartesian", ShaderUtils.loadProgram("/grid/cartesian"));
         gridShaders.put("Sea", ShaderUtils.loadProgram("/grid/sea"));
         gridShaders.put("Depth", ShaderUtils.loadProgram("/grid/depth"));
+        gridShaders.put("Cylinder", ShaderUtils.loadProgram("/grid/cylinder"));
         objShader = ShaderUtils.loadProgram("/ducky");
         shaderProgram = gridShaders.get("Flat");
 
