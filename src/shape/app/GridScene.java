@@ -69,7 +69,7 @@ public class GridScene extends AbstractRenderer {
         gridShaders = new HashMap<>();
 
         info = new HashMap<>();
-        info.put("scene", new ArrayList<>(List.of("[TAB] Scene:", "Grid")));
+        info.put("scene", new ArrayList<>(List.of("[TAB] Scene: Grid", "")));
         info.put("mode", new ArrayList<>(List.of("[M] Render mode:", "")));
         info.put("grid", new ArrayList<>(List.of("[G] Grid type:", "")));
         info.put("projection", new ArrayList<>(List.of("[P] Projection:", "")));
@@ -194,6 +194,7 @@ public class GridScene extends AbstractRenderer {
     @Override
     public void init() {
         super.init();
+        changeScene = false;
         GL.createCapabilities();
         limiter = new FpsLimiter();
         glClearColor(0.4f, 0.4f, 0.5f, 1.0f);
@@ -271,6 +272,16 @@ public class GridScene extends AbstractRenderer {
 
     public boolean nextScene(){
         return changeScene;
+    }
+
+    @Override
+    public void dispose(){
+        for (int s: gridShaders.values()) {
+            glDeleteProgram(s);
+        }
+        gridList.unbind();
+        gridStrip.unbind();
+        model.getBuffers().unbind();
     }
 
 }

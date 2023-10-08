@@ -34,18 +34,16 @@ public class LightsScene extends AbstractRenderer {
     Camera cam = new Camera().withPosition(new Vec3D(-0.5, 0.5, 0.5));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
     int shaderProgram, locMat, objShader;
+    private boolean changeScene = false;
     private boolean renderDocDebug = false;
     private HashMap<String, Integer> gridShaders;
-    private SceneEnum activeScene = SceneEnum.Grid;
     private FpsLimiter limiter;
     private Cube cube;
     private HashMap<String, ArrayList<String>> info;
-    private boolean list = true;
     private boolean persp = true;
     private double speed = 0.01;
     private double zoom = 32;
     private boolean mouseButton1 = false;
-    private Mode mode = Mode.Fill;
     private String aciveShaderName = "Flat";
     private float time = 0;
     private Mat4 modelTransf;
@@ -56,16 +54,11 @@ public class LightsScene extends AbstractRenderer {
         gridShaders = new HashMap<>();
 
         info = new HashMap<>();
-        info.put("scene", new ArrayList<>(List.of("[TAB] Scene:", "Lights")));
-        info.put("mode", new ArrayList<>(List.of("[M] Render mode:", "")));
-        info.put("grid", new ArrayList<>(List.of("[G] Grid type:", "")));
+        info.put("scene", new ArrayList<>(List.of("[TAB] Scene: Lights", "")));
         info.put("projection", new ArrayList<>(List.of("[P] Projection:", "")));
         info.put("shader", new ArrayList<>(List.of("[R] Grid shader:", "Flat")));
         info.put("speed", new ArrayList<>(List.of("Speed:", "0.01", " Zoom:", "32")));
 
-        info.get("scene").set(1, activeScene.toString());
-        info.get("mode").set(1, mode.toString());
-        info.get("grid").set(1, list ? "List" : "Strip");
         info.get("projection").set(1, persp ? "Persp" : "Ortho");
     }
 
@@ -77,11 +70,8 @@ public class LightsScene extends AbstractRenderer {
                     glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
                 if (action == GLFW_PRESS || action == GLFW_REPEAT) {
                     switch (key) {
-                        case GLFW_KEY_M -> {
-                            mode = mode.next();
-                            info.get("mode").set(1, mode.toString());
-                        }
                         case GLFW_KEY_TAB -> {
+                            changeScene = true;
                             glfwSetWindowShouldClose(window, true);
                         }
                         case GLFW_KEY_P -> {
@@ -171,6 +161,7 @@ public class LightsScene extends AbstractRenderer {
     @Override
     public void init() {
         super.init();
+        changeScene = false;
         GL.createCapabilities();
         limiter = new FpsLimiter();
         glClearColor(0.4f, 0.4f, 0.5f, 1.0f);
@@ -194,19 +185,9 @@ public class LightsScene extends AbstractRenderer {
 
         glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
 
-        switch (mode) {
-            case Fill -> {
-                glPolygonMode(GL_FRONT, GL_FILL);
-                glPolygonMode(GL_BACK, GL_FILL);
-                cube.draw(shaderProgram);
-            }
-            case Lines -> {
-                glPolygonMode(GL_FRONT, GL_LINE);
-                glPolygonMode(GL_BACK, GL_LINE);
-                cube.draw(shaderProgram);
-            }
-            case Dots -> cube.draw(shaderProgram, GL_POINTS);
-        }
+        glPolygonMode(GL_FRONT, GL_FILL);
+        glPolygonMode(GL_BACK, GL_FILL);
+        cube.draw(shaderProgram);
 
         if (!renderDocDebug) {
             text();
@@ -225,7 +206,15 @@ public class LightsScene extends AbstractRenderer {
     }
 
     public boolean nextScene(){
-        return false;
+        return changeScene;
+    }
+
+    @Override
+    public void dispose(){
+        for (int s: gridShaders.values()) {
+            glDeleteProgram(s);
+        }
+        cube.unbind();
     }
 
 }

@@ -5,6 +5,8 @@ import shape.app.LightsScene;
 import shape.global.LwjglWindow;
 import shape.utils.SceneEnum;
 
+import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
+
 public class Main {
     public static void main(String[] args) {
         int w = 1280;

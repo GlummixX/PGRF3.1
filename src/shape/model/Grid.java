@@ -89,4 +89,8 @@ public class Grid {
 
         return new Grid(new OGLBuffers(vertex, attributes, index), GL_TRIANGLE_STRIP);
     }
+
+    public void unbind(){
+        buffers.unbind();
+    }
 }

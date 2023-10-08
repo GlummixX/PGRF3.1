@@ -55,19 +55,26 @@ public class LwjglWindow {
 	}
 
 	public LwjglWindow(int width, int height, boolean debug) {
-		init();
 		DEBUG = debug;
 		WIDTH = width;
 		HEIGHT = height;
 		if (DEBUG)
 			System.err.println("Run in debugging mode");
+		rendererLessInit();
 	}
 
 	public void setRenderer(AbstractRenderer renderer) {
 		this.renderer = renderer;
+		renderer.setWindow(window);
+
+		glfwSetKeyCallback(window, renderer.getGlfwKeyCallback());
+		glfwSetWindowSizeCallback(window, renderer.getGlfwWindowSizeCallback());
+		glfwSetMouseButtonCallback(window, renderer.getGlfwMouseButtonCallback());
+		glfwSetCursorPosCallback(window, renderer.getGlfwCursorPosCallback());
+		glfwSetScrollCallback(window, renderer.getGlfwScrollCallback());
 		loop();
 		renderer.dispose();
-		glfwFreeCallbacks(window);
+		//glfwFreeCallbacks(window);
 	}
 
 	public void exit(){
@@ -115,14 +122,6 @@ public class LwjglWindow {
 		window = glfwCreateWindow(WIDTH, HEIGHT, "PGRF III - Kolář", NULL, NULL);
 		if (window == NULL)
 			throw new RuntimeException("Failed to create the GLFW window");
-		renderer.setWindow(window);
-
-		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
-		glfwSetKeyCallback(window, renderer.getGlfwKeyCallback());
-		glfwSetWindowSizeCallback(window, renderer.getGlfwWindowSizeCallback());
-		glfwSetMouseButtonCallback(window, renderer.getGlfwMouseButtonCallback());
-		glfwSetCursorPosCallback(window, renderer.getGlfwCursorPosCallback());
-		glfwSetScrollCallback(window, renderer.getGlfwScrollCallback());
 
 		if (DEBUG)
 			glfwSetErrorCallback(new GLFWErrorCallback() {
@@ -316,6 +315,7 @@ public class LwjglWindow {
 		if (DEBUG)
 			GLUtil.setupDebugMessageCallback();
 
+		glfwSetWindowShouldClose(window, false);
 		renderer.init();
 
 		// Run the rendering loop until the user has attempted to close

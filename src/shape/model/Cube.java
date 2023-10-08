@@ -72,4 +72,8 @@ public class Cube {
         return new Cube(new OGLBuffers(cube, attributes, indexBufferData), GL_TRIANGLES);
     }
 
+    public void unbind(){
+        buffers.unbind();
+    }
+
 }
