@@ -10,10 +10,9 @@ import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
 import org.lwjgl.opengl.GL;
 import shape.global.AbstractRenderer;
-import shape.model.Cube;
+import shape.model.Axis;
 import shape.model.Grid;
 import shape.utils.FpsLimiter;
-import shape.utils.SceneEnum;
 import transforms.*;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +24,6 @@ import java.util.List;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
-import static shape.model.Cube.createCube;
 import static shape.model.Grid.gridList;
 import static shape.model.Grid.gridStrip;
 
@@ -51,6 +49,7 @@ public class GridScene extends AbstractRenderer {
     private Grid gridList;
     private Grid gridStrip;
     private Grid grid;
+    private Axis axis;
     private HashMap<String, ArrayList<String>> info;
     private boolean list = true;
     private boolean persp = true;
@@ -63,8 +62,9 @@ public class GridScene extends AbstractRenderer {
     private OGLModelOBJ model;
     private Mat4 modelTransf;
 
-    public GridScene(int width, int height) {
+    public GridScene(int width, int height, boolean debug) {
         super(width, height);
+        renderDocDebug = debug;
         callbacks();
         gridShaders = new HashMap<>();
 
@@ -210,6 +210,7 @@ public class GridScene extends AbstractRenderer {
 
         model = new OGLModelOBJ("/obj/ducky.obj");
         modelTransf = new Mat4Scale(0.05).mul(new Mat4RotX(1.5)).mul(new Mat4Transl(new Vec3D(0.5, 0.5, 0)));
+        axis = new Axis();
 
         gridList = gridList(100);
         gridStrip = gridStrip(100);
@@ -253,6 +254,7 @@ public class GridScene extends AbstractRenderer {
             model.getBuffers().draw(model.getTopology(), objShader);
         }
 
+        axis.draw(cam.getViewMatrix().mul(proj));
 
         if (!renderDocDebug) {
             text();

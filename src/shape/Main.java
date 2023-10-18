@@ -5,15 +5,14 @@ import shape.app.LightsScene;
 import shape.global.LwjglWindow;
 import shape.utils.SceneEnum;
 
-import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
-
 public class Main {
     public static void main(String[] args) {
+        boolean debufg = true;
         int w = 1280;
         int h = 720;
         SceneEnum scene = SceneEnum.Grid;
-        GridScene grid = new GridScene(w, h);
-        LightsScene lights = new LightsScene(w, h);
+        GridScene grid = new GridScene(w, h, debufg);
+        LightsScene lights = new LightsScene(w, h, debufg);
         LwjglWindow win = new LwjglWindow(w, h, false);
         boolean run = true;
         while (run) {
@@ -21,9 +20,9 @@ public class Main {
             switch (scene) {
                 case Grid -> {
                     win.setRenderer(grid);
-                    if (grid.nextScene()){
+                    if (grid.nextScene()) {
                         scene = scene.next();
-                    }else{
+                    } else {
                         run = false;
                     }
                     break;

@@ -1,6 +1,5 @@
 package shape.app;
 
-import lwjglutils.OGLModelOBJ;
 import lwjglutils.ShaderUtils;
 import lwjglutils.ToFloatArray;
 import org.lwjgl.BufferUtils;
@@ -10,15 +9,13 @@ import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
 import org.lwjgl.opengl.GL;
 import shape.global.AbstractRenderer;
+import shape.model.Axis;
 import shape.model.Cube;
-import shape.model.Grid;
 import shape.utils.FpsLimiter;
-import shape.utils.SceneEnum;
 import transforms.*;
 
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,8 +23,6 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import static shape.model.Cube.createCube;
-import static shape.model.Grid.gridList;
-import static shape.model.Grid.gridStrip;
 
 public class LightsScene extends AbstractRenderer {
     double ox, oy;
@@ -39,6 +34,7 @@ public class LightsScene extends AbstractRenderer {
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
     private Cube cube;
+    private Axis axis;
     private HashMap<String, ArrayList<String>> info;
     private boolean persp = true;
     private double speed = 0.01;
@@ -48,8 +44,9 @@ public class LightsScene extends AbstractRenderer {
     private float time = 0;
     private Mat4 modelTransf;
 
-    public LightsScene(int width, int height) {
+    public LightsScene(int width, int height, boolean debug) {
         super(width, height);
+        renderDocDebug = debug;
         callbacks();
         gridShaders = new HashMap<>();
 
@@ -167,10 +164,12 @@ public class LightsScene extends AbstractRenderer {
         glClearColor(0.4f, 0.4f, 0.5f, 1.0f);
 
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
+        gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
         shaderProgram = gridShaders.get("Flat");
 
+        axis = new Axis();
         cube = createCube();
-        modelTransf = new Mat4Scale(0.5).mul(new Mat4RotX(1.5));
+        modelTransf = new Mat4Identity();
         glEnable(GL_DEPTH_TEST);
     }
 
@@ -184,10 +183,16 @@ public class LightsScene extends AbstractRenderer {
         glUseProgram(shaderProgram);
 
         glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
+        if (aciveShaderName.equals("Light Phong")) {
+            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+        }
 
         glPolygonMode(GL_FRONT, GL_FILL);
         glPolygonMode(GL_BACK, GL_FILL);
         cube.draw(shaderProgram);
+
+        axis.draw(cam.getViewMatrix().mul(proj));
 
         if (!renderDocDebug) {
             text();
