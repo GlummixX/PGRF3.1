@@ -39,10 +39,10 @@ enum Mode {
 
 public class GridScene extends AbstractRenderer {
     double ox, oy;
-    Camera cam = new Camera().withPosition(new Vec3D(-0.5, 0.5, 0.5));
+    Camera cam = new Camera().withPosition(new Vec3D(-0.7, 0.5, 0.5)).withZenith(-0.4);
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    int shaderProgram, locMat, objShader;
-    private boolean renderDocDebug = false;
+    int shaderProgram, objShader;
+    private boolean renderDocDebug;
     private boolean changeScene = false;
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;

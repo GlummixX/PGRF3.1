@@ -1,5 +1,6 @@
 package shape.app;
 
+import lwjglutils.OGLTexture2D;
 import lwjglutils.ShaderUtils;
 import lwjglutils.ToFloatArray;
 import org.lwjgl.BufferUtils;
@@ -14,6 +15,7 @@ import shape.model.Cube;
 import shape.utils.FpsLimiter;
 import transforms.*;
 
+import java.io.IOException;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,18 +25,21 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import static shape.model.Cube.createCube;
+import static shape.model.Cube.createTextureCube;
 
 public class LightsScene extends AbstractRenderer {
     double ox, oy;
-    Camera cam = new Camera().withPosition(new Vec3D(-0.5, 0.5, 0.5));
+    Camera cam = new Camera().withPosition(new Vec3D(-1.5, 0.5, 0.5));
     Mat4 proj = new Mat4PerspRH(Math.PI / 4, (double) height / width, 0.01, 1000.0);
-    int shaderProgram, locMat, objShader;
+    int shaderProgram;
     private boolean changeScene = false;
-    private boolean renderDocDebug = false;
+    private boolean renderDocDebug;
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
     private Cube cube;
+    private Cube texture_cube;
     private Axis axis;
+    private OGLTexture2D texture;
     private HashMap<String, ArrayList<String>> info;
     private boolean persp = true;
     private double speed = 0.01;
@@ -53,7 +58,7 @@ public class LightsScene extends AbstractRenderer {
         info = new HashMap<>();
         info.put("scene", new ArrayList<>(List.of("[TAB] Scene: Lights", "")));
         info.put("projection", new ArrayList<>(List.of("[P] Projection:", "")));
-        info.put("shader", new ArrayList<>(List.of("[R] Grid shader:", "Flat")));
+        info.put("shader", new ArrayList<>(List.of("[R] Shader:", "Flat")));
         info.put("speed", new ArrayList<>(List.of("Speed:", "0.01", " Zoom:", "32")));
 
         info.get("projection").set(1, persp ? "Persp" : "Ortho");
@@ -165,10 +170,18 @@ public class LightsScene extends AbstractRenderer {
 
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
         gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
+        gridShaders.put("Textured Phong", ShaderUtils.loadProgram("/cube/light_texture"));
         shaderProgram = gridShaders.get("Flat");
+
+        try {
+            texture = new OGLTexture2D("textures/bricks.jpg");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         axis = new Axis();
         cube = createCube();
+        texture_cube = createTextureCube();
         modelTransf = new Mat4Identity();
         glEnable(GL_DEPTH_TEST);
     }
@@ -182,15 +195,22 @@ public class LightsScene extends AbstractRenderer {
 
         glUseProgram(shaderProgram);
 
-        glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
-        if (aciveShaderName.equals("Light Phong")) {
-            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
-        }
-
         glPolygonMode(GL_FRONT, GL_FILL);
         glPolygonMode(GL_BACK, GL_FILL);
-        cube.draw(shaderProgram);
+
+        glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
+        if (aciveShaderName.equals("Flat")) {
+            cube.draw(shaderProgram);
+        } else if (aciveShaderName.equals("Light Phong")) {
+            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+            cube.draw(shaderProgram);
+        } else if (aciveShaderName.equals("Textured Phong")) {
+            texture.bind(shaderProgram, "textureID", 0);
+            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+            texture_cube.draw(shaderProgram);
+        }
 
         axis.draw(cam.getViewMatrix().mul(proj));
 
