@@ -39,7 +39,7 @@ public class LightsScene extends AbstractRenderer {
     private Cube cube;
     private Cube texture_cube;
     private Axis axis;
-    private OGLTexture2D texture;
+    private OGLTexture2D texture, texture2;
     private HashMap<String, ArrayList<String>> info;
     private boolean persp = true;
     private double speed = 0.01;
@@ -170,10 +170,12 @@ public class LightsScene extends AbstractRenderer {
         gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
         gridShaders.put("Textured Phong", ShaderUtils.loadProgram("/cube/light_texture"));
         gridShaders.put("Moving source Phong", ShaderUtils.loadProgram("/cube/light_moving"));
+        gridShaders.put("Texture blending", ShaderUtils.loadProgram("/cube/texture_blending"));
         shaderProgram = gridShaders.get("Flat");
 
         try {
             texture = new OGLTexture2D("textures/bricks.jpg");
+            texture2 = new OGLTexture2D("textures/mosaic.jpg");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -209,6 +211,12 @@ public class LightsScene extends AbstractRenderer {
                 texture.bind(shaderProgram, "textureID", 0);
                 glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+                texture_cube.draw(shaderProgram);
+            }
+            case "Texture blending" -> {
+                texture.bind(shaderProgram, "textureID", 0);
+                texture2.bind(shaderProgram, "textureID2", 1);
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 texture_cube.draw(shaderProgram);
             }
         }
