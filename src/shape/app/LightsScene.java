@@ -98,8 +98,6 @@ public class LightsScene extends AbstractRenderer {
                         case GLFW_KEY_A -> cam = cam.left(speed);
                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(speed);
                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(speed);
-                        case GLFW_KEY_KP_ADD -> cam = cam.mulRadius(0.9f);
-                        case GLFW_KEY_KP_SUBTRACT -> cam = cam.mulRadius(1.1f);
                     }
                 }
             }
@@ -171,6 +169,7 @@ public class LightsScene extends AbstractRenderer {
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
         gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
         gridShaders.put("Textured Phong", ShaderUtils.loadProgram("/cube/light_texture"));
+        gridShaders.put("Moving source Phong", ShaderUtils.loadProgram("/cube/light_moving"));
         shaderProgram = gridShaders.get("Flat");
 
         try {
@@ -199,17 +198,19 @@ public class LightsScene extends AbstractRenderer {
         glPolygonMode(GL_BACK, GL_FILL);
 
         glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
-        if (aciveShaderName.equals("Flat")) {
-            cube.draw(shaderProgram);
-        } else if (aciveShaderName.equals("Light Phong")) {
-            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
-            cube.draw(shaderProgram);
-        } else if (aciveShaderName.equals("Textured Phong")) {
-            texture.bind(shaderProgram, "textureID", 0);
-            glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
-            texture_cube.draw(shaderProgram);
+        switch (aciveShaderName) {
+            case "Flat" -> cube.draw(shaderProgram);
+            case "Light Phong", "Moving source Phong" -> {
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+                cube.draw(shaderProgram);
+            }
+            case "Textured Phong" -> {
+                texture.bind(shaderProgram, "textureID", 0);
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+                texture_cube.draw(shaderProgram);
+            }
         }
 
         axis.draw(cam.getViewMatrix().mul(proj));

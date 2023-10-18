@@ -49,6 +49,7 @@ public class GridScene extends AbstractRenderer {
     private Grid gridList;
     private Grid gridStrip;
     private Grid grid;
+    private boolean manual = false;
     private Axis axis;
     private HashMap<String, ArrayList<String>> info;
     private boolean list = true;
@@ -75,8 +76,10 @@ public class GridScene extends AbstractRenderer {
         info.put("projection", new ArrayList<>(List.of("[P] Projection:", "")));
         info.put("shader", new ArrayList<>(List.of("[R] Grid shader:", "Flat")));
         info.put("speed", new ArrayList<>(List.of("Speed:", "0.01", " Zoom:", "32")));
+        info.put("manual", new ArrayList<>(List.of("[O +/-]Manual control:", "")));
 
         info.get("mode").set(1, mode.toString());
+        info.get("manual").set(1, String.valueOf(manual));
         info.get("grid").set(1, list ? "List" : "Strip");
         info.get("projection").set(1, persp ? "Persp" : "Ortho");
     }
@@ -92,6 +95,15 @@ public class GridScene extends AbstractRenderer {
                         case GLFW_KEY_M -> {
                             mode = mode.next();
                             info.get("mode").set(1, mode.toString());
+                        }
+                        case GLFW_KEY_KP_ADD -> {
+                            time = (time + 0.01F) % (float) Math.PI;
+                        }
+                        case GLFW_KEY_KP_SUBTRACT -> {
+                            time = (time - 0.01F) % (float) Math.PI;
+                        }
+                        case GLFW_KEY_O -> {
+                            manual = !manual;
                         }
                         case GLFW_KEY_TAB -> {
                             changeScene = true;
@@ -129,8 +141,6 @@ public class GridScene extends AbstractRenderer {
                         case GLFW_KEY_A -> cam = cam.left(speed);
                         case GLFW_KEY_LEFT_CONTROL -> cam = cam.down(speed);
                         case GLFW_KEY_LEFT_SHIFT -> cam = cam.up(speed);
-                        case GLFW_KEY_KP_ADD -> cam = cam.mulRadius(0.9f);
-                        case GLFW_KEY_KP_SUBTRACT -> cam = cam.mulRadius(1.1f);
                     }
                 }
             }
@@ -223,7 +233,9 @@ public class GridScene extends AbstractRenderer {
         //shared across scenes
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        time = (time + 0.01F) % (float) Math.PI;
+        if (!manual) {
+            time = (time + 0.01F) % (float) Math.PI;
+        }
 
         glUseProgram(shaderProgram);
 
