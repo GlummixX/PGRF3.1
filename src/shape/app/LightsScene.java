@@ -37,6 +37,7 @@ public class LightsScene extends AbstractRenderer {
     private HashMap<String, Integer> gridShaders;
     private FpsLimiter limiter;
     private Cube cube;
+    private Cube lightSourceCube;
     private Cube texture_cube;
     private Axis axis;
     private OGLTexture2D texture, texture2;
@@ -48,6 +49,8 @@ public class LightsScene extends AbstractRenderer {
     private String aciveShaderName = "Flat";
     private float time = 0;
     private Mat4 modelTransf;
+    private Vec3D lightPos = cam.getPosition();
+    private Vec3D lightDir = cam.getPosition().add(cam.getViewVector());
 
     public LightsScene(int width, int height, boolean debug) {
         super(width, height);
@@ -85,6 +88,12 @@ public class LightsScene extends AbstractRenderer {
                                 persp = true;
                             }
                             info.get("projection").set(1, persp ? "Persp" : "Ortho");
+                        }
+                        case GLFW_KEY_L -> {
+                            if (aciveShaderName.equals("[L]Placeable reflector")) {
+                                lightPos = cam.getPosition();
+                                lightDir = cam.getPosition().add(cam.getViewVector());
+                            }
                         }
                         case GLFW_KEY_R -> {
                             List<String> l = new ArrayList<>(gridShaders.keySet());
@@ -169,7 +178,8 @@ public class LightsScene extends AbstractRenderer {
         gridShaders.put("Flat", ShaderUtils.loadProgram("/grid/flat"));
         gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
         gridShaders.put("Textured Phong", ShaderUtils.loadProgram("/cube/light_texture"));
-        gridShaders.put("Moving source Phong", ShaderUtils.loadProgram("/cube/light_moving"));
+        gridShaders.put("Source at camera Phong", ShaderUtils.loadProgram("/cube/light_moving"));
+        gridShaders.put("[L]Placeable reflector", ShaderUtils.loadProgram("/cube/light_reflector"));
         gridShaders.put("Texture blending", ShaderUtils.loadProgram("/cube/texture_blending"));
         shaderProgram = gridShaders.get("Flat");
 
@@ -182,6 +192,7 @@ public class LightsScene extends AbstractRenderer {
 
         axis = new Axis();
         cube = createCube();
+        lightSourceCube = createCube();
         texture_cube = createTextureCube();
         modelTransf = new Mat4Identity();
         glEnable(GL_DEPTH_TEST);
@@ -202,10 +213,21 @@ public class LightsScene extends AbstractRenderer {
         glUniformMatrix4fv(0, false, ToFloatArray.convert(cam.getViewMatrix().mul(proj)));
         switch (aciveShaderName) {
             case "Flat" -> cube.draw(shaderProgram);
-            case "Light Phong", "Moving source Phong" -> {
+            case "Light Phong", "Source at camera Phong" -> {
                 glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
                 cube.draw(shaderProgram);
+            }
+            case "[L]Placeable reflector" -> {
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "lightPos"), ToFloatArray.convert(lightPos));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "lightDir"), ToFloatArray.convert(lightDir));
+                cube.draw(shaderProgram);
+
+                glUseProgram(gridShaders.get("Flat"));
+                glUniformMatrix4fv(0, false, ToFloatArray.convert(new Mat4Scale(0.05).mul(new Mat4Transl(lightPos)).mul(cam.getViewMatrix().mul(proj))));
+                lightSourceCube.draw(gridShaders.get("Flat"));
             }
             case "Textured Phong" -> {
                 texture.bind(shaderProgram, "textureID", 0);
@@ -217,6 +239,7 @@ public class LightsScene extends AbstractRenderer {
                 texture.bind(shaderProgram, "textureID", 0);
                 texture2.bind(shaderProgram, "textureID2", 1);
                 glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+                glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float) Math.sin(time));
                 texture_cube.draw(shaderProgram);
             }
         }
