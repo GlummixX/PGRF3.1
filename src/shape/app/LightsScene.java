@@ -50,7 +50,7 @@ public class LightsScene extends AbstractRenderer {
     private float time = 0;
     private Mat4 modelTransf;
     private Vec3D lightPos = cam.getPosition();
-    private Vec3D lightDir = cam.getPosition().add(cam.getViewVector());
+    private Vec3D lightDir = cam.getPosition().add(cam.getViewVector().mul(-1));
 
     public LightsScene(int width, int height, boolean debug) {
         super(width, height);
@@ -92,7 +92,7 @@ public class LightsScene extends AbstractRenderer {
                         case GLFW_KEY_L -> {
                             if (aciveShaderName.equals("[L]Placeable reflector")) {
                                 lightPos = cam.getPosition();
-                                lightDir = cam.getPosition().add(cam.getViewVector());
+                                lightDir = cam.getPosition().add(cam.getViewVector().mul(-1));
                             }
                         }
                         case GLFW_KEY_R -> {
