@@ -7,7 +7,7 @@ import shape.utils.SceneEnum;
 
 public class Main {
     public static void main(String[] args) {
-        boolean debufg = true;
+        boolean debufg = false;
         int w = 1280;
         int h = 720;
         SceneEnum scene = SceneEnum.Grid;

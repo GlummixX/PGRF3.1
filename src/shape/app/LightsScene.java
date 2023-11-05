@@ -179,8 +179,10 @@ public class LightsScene extends AbstractRenderer {
         gridShaders.put("Light Phong", ShaderUtils.loadProgram("/cube/light_basic"));
         gridShaders.put("Textured Phong", ShaderUtils.loadProgram("/cube/light_texture"));
         gridShaders.put("Source at camera Phong", ShaderUtils.loadProgram("/cube/light_moving"));
+        gridShaders.put("Light attached to moving object", ShaderUtils.loadProgram("/cube/light_moving"));
         gridShaders.put("[L]Placeable reflector", ShaderUtils.loadProgram("/cube/light_reflector"));
         gridShaders.put("Texture blending", ShaderUtils.loadProgram("/cube/texture_blending"));
+        gridShaders.put("UV coordinates", ShaderUtils.loadProgram("/cube/uv"));
         shaderProgram = gridShaders.get("Flat");
 
         try {
@@ -218,6 +220,17 @@ public class LightsScene extends AbstractRenderer {
                 glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
                 cube.draw(shaderProgram);
             }
+            case "Light attached to moving object" -> {
+                Vec3D sourcePos = new Vec3D(-0.2, 1.2, 1.2);
+                Mat4 modelTransf = new Mat4Transl(0, 0, Math.sin(time));
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
+                glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(sourcePos.add(new Vec3D(0, 0, Math.sin(time)))));
+                cube.draw(shaderProgram);
+
+                glUseProgram(gridShaders.get("Flat"));
+                glUniformMatrix4fv(0, false, ToFloatArray.convert(new Mat4Scale(0.05).mul(new Mat4Transl(sourcePos)).mul(modelTransf).mul(cam.getViewMatrix().mul(proj))));
+                lightSourceCube.draw(gridShaders.get("Flat"));
+            }
             case "[L]Placeable reflector" -> {
                 glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), ToFloatArray.convert(cam.getPosition()));
@@ -240,6 +253,10 @@ public class LightsScene extends AbstractRenderer {
                 texture2.bind(shaderProgram, "textureID2", 1);
                 glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float) Math.sin(time));
+                texture_cube.draw(shaderProgram);
+            }
+            case "UV coordinates" -> {
+                glUniformMatrix4fv(1, false, ToFloatArray.convert(modelTransf));
                 texture_cube.draw(shaderProgram);
             }
         }
