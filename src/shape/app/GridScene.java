@@ -215,6 +215,7 @@ public class GridScene extends AbstractRenderer {
         gridShaders.put("Sea", ShaderUtils.loadProgram("/grid/sea"));
         gridShaders.put("Depth", ShaderUtils.loadProgram("/grid/depth"));
         gridShaders.put("Cylinder", ShaderUtils.loadProgram("/grid/cylinder"));
+        gridShaders.put("Normal", ShaderUtils.loadProgram("/grid/normals"));
         objShader = ShaderUtils.loadProgram("/ducky");
         shaderProgram = gridShaders.get("Flat");
 
@@ -243,6 +244,12 @@ public class GridScene extends AbstractRenderer {
 
         if (aciveShaderName.equals("Sea")) {
             glUniform1f(1, time);
+        }
+
+        if (aciveShaderName.equals("Normal")) {
+            grid = gridStrip;
+            list = false;
+            info.get("grid").set(1, list ? "List" : "Strip");
         }
 
         switch (mode) {
