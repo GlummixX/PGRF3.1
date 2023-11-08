@@ -104,6 +104,7 @@ public class GridScene extends AbstractRenderer {
                         }
                         case GLFW_KEY_O -> {
                             manual = !manual;
+                            info.get("manual").set(1, String.valueOf(manual));
                         }
                         case GLFW_KEY_TAB -> {
                             changeScene = true;
